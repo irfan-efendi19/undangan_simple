@@ -1,136 +1,164 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Undangan Digital</title>
+    <title>Ucapan Undangan Digital</title>
     <style>
       body {
         font-family: Arial, sans-serif;
-        text-align: center;
-        background-color: #f4f4f9;
-        padding: 50px;
-      }
-      .invitation {
         max-width: 600px;
         margin: 0 auto;
         padding: 20px;
-        background-color: #fff;
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        background-color: #f7f7f7;
       }
-      .message {
-        font-size: 18px;
-        color: #333;
-        margin-top: 20px;
-        border-top: 1px solid #ccc;
-        padding-top: 10px;
+
+      h1 {
+        text-align: center;
       }
-      input[type="text"] {
-        width: 80%;
+
+      form {
+        margin-bottom: 20px;
         padding: 10px;
-        margin-top: 20px;
-        font-size: 16px;
+        background-color: #fff;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      input[type="text"],
+      textarea {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
         border: 1px solid #ccc;
         border-radius: 5px;
       }
+
       button {
+        display: inline-block;
         padding: 10px 20px;
         font-size: 16px;
-        margin-top: 10px;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+        outline: none;
+        color: #fff;
+        background-color: #4caf50;
         border: none;
         border-radius: 5px;
-        background-color: #007bff;
-        color: white;
-        cursor: pointer;
+        box-shadow: 0 9px #999;
       }
+
       button:hover {
-        background-color: #0056b3;
+        background-color: #45a049;
       }
+
+      button:active {
+        background-color: #45a049;
+        box-shadow: 0 5px #666;
+        transform: translateY(4px);
+      }
+
       ul {
         list-style-type: none;
         padding: 0;
       }
+
       li {
-        background-color: #f9f9f9;
-        margin: 10px 0;
         padding: 10px;
+        background-color: #fff;
+        margin-bottom: 5px;
         border-radius: 5px;
-        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       }
+
       .guest-name {
         font-weight: bold;
-        margin-bottom: 5px;
+        margin-right: 5px;
       }
     </style>
   </head>
+
   <body>
-    <div class="invitation">
-      <h1>Selamat Datang di Undangan Pernikahan Kami</h1>
-      <p>
-        Kami sangat berbahagia mengundang Anda untuk hadir di hari istimewa
-        kami.
-      </p>
-
-      <input type="text" id="guestName" placeholder="Nama Anda" />
-      <input
-        type="text"
+    <h1>Ucapan Undangan Digital</h1>
+    <form id="messageForm">
+      <input type="text" id="guestName" placeholder="Nama Anda" required />
+      <textarea
         id="userMessage"
-        placeholder="Ketik ucapan Anda di sini"
-      />
-      <button id="submitMessage">Tambah Ucapan</button>
-
-      <div id="messages" class="message">
-        <h3>Ucapan dari Tamu:</h3>
-        <ul id="messageList"></ul>
-      </div>
-    </div>
+        rows="4"
+        placeholder="Ucapan Anda"
+        required
+      ></textarea>
+      <button type="submit" id="submitMessage">Kirim Ucapan</button>
+    </form>
+    <ul id="messageList"></ul>
 
     <script>
       async function fetchMessages() {
-        const response = await fetch("http://localhost:3000/messages");
-        const messages = await response.json();
-        const messageListElement = document.getElementById("messageList");
+        try {
+          const response = await fetch(
+            "http://localhost/eksperimen/server.php"
+          );
+          const messages = await response.json();
 
-        messageListElement.innerHTML = "";
-        messages.forEach((message) => {
-          const listItem = document.createElement("li");
-          listItem.innerHTML = `<span class="guest-name">${message.name}:</span> ${message.message}`;
-          messageListElement.appendChild(listItem);
-        });
+          const messageListElement = document.getElementById("messageList");
+          messageListElement.innerHTML = "";
+          messages.forEach((message) => {
+            const listItem = document.createElement("li");
+            listItem.innerHTML = `<span class="guest-name">${message.name}:</span> ${message.message}`;
+            messageListElement.appendChild(listItem);
+          });
+        } catch (error) {
+          console.error("Kesalahan saat mengambil data:", error);
+          alert("Gagal mengambil data ucapan.");
+        }
       }
 
       document
-        .getElementById("submitMessage")
-        .addEventListener("click", async function () {
+        .getElementById("messageForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
           const guestName = document.getElementById("guestName").value.trim();
           const userMessage = document
             .getElementById("userMessage")
             .value.trim();
 
           if (guestName !== "" && userMessage !== "") {
-            const response = await fetch("http://localhost:3000/messages", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ name: guestName, message: userMessage }),
-            });
+            try {
+              const response = await fetch(
+                "http://localhost/eksperimen/server.php",
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    name: guestName,
+                    message: userMessage,
+                  }),
+                }
+              );
 
-            if (response.ok) {
-              fetchMessages();
-              document.getElementById("guestName").value = "";
-              document.getElementById("userMessage").value = "";
-            } else {
-              alert("Terjadi kesalahan saat mengirim ucapan.");
+              const result = await response.json();
+              console.log("Server Response:", result);
+
+              if (response.ok) {
+                fetchMessages();
+                document.getElementById("guestName").value = "";
+                document.getElementById("userMessage").value = "";
+              } else {
+                alert(
+                  result.message || "Terjadi kesalahan saat mengirim ucapan."
+                );
+              }
+            } catch (error) {
+              console.error("Kesalahan saat mengirim permintaan:", error);
+              alert("Kesalahan koneksi atau server.");
             }
           } else {
             alert("Silakan isi nama dan ucapan Anda terlebih dahulu.");
           }
         });
-
-      // Ambil dan tampilkan semua ucapan saat halaman dimuat
-      fetchMessages();
     </script>
   </body>
 </html>
