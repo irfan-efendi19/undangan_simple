@@ -4,7 +4,11 @@ include 'config.php';
 
 // Mengambil data pesan
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $sql = "SELECT * FROM messages ORDER BY created_at DESC";
+    $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+    $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 10;
+    $offset = ($page - 1) * $limit;
+
+    $sql = "SELECT * FROM messages ORDER BY created_at DESC LIMIT $limit OFFSET $offset";
     $result = $conn->query($sql);
     $messages = [];
 
@@ -18,7 +22,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
     }
 
-    echo json_encode($messages);
+    // Menghitung total pesan
+    $countSql = "SELECT COUNT(*) as total FROM messages";
+    $countResult = $conn->query($countSql);
+    $total = $countResult->fetch_assoc()['total'];
+
+    echo json_encode([
+        'messages' => $messages,
+        'total' => $total,
+        'page' => $page,
+        'limit' => $limit
+    ]);
     exit;
 }
 

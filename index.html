@@ -12,11 +12,9 @@
         padding: 20px;
         background-color: #f7f7f7;
       }
-
       h1 {
         text-align: center;
       }
-
       form {
         margin-bottom: 20px;
         padding: 10px;
@@ -24,7 +22,6 @@
         border-radius: 5px;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       }
-
       input[type="text"],
       textarea {
         width: 100%;
@@ -33,7 +30,6 @@
         border: 1px solid #ccc;
         border-radius: 5px;
       }
-
       button {
         display: inline-block;
         padding: 10px 20px;
@@ -48,22 +44,18 @@
         border-radius: 5px;
         box-shadow: 0 9px #999;
       }
-
       button:hover {
         background-color: #45a049;
       }
-
       button:active {
         background-color: #45a049;
         box-shadow: 0 5px #666;
         transform: translateY(4px);
       }
-
       ul {
         list-style-type: none;
         padding: 0;
       }
-
       li {
         padding: 10px;
         background-color: #fff;
@@ -71,14 +63,30 @@
         border-radius: 5px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       }
-
       .guest-name {
         font-weight: bold;
         margin-right: 5px;
       }
+      .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+      }
+      .pagination button {
+        margin: 0 5px;
+        padding: 10px;
+        font-size: 16px;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        background-color: #fff;
+        border-radius: 5px;
+      }
+      .pagination button.disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
     </style>
   </head>
-
   <body>
     <h1>Ucapan Undangan Digital</h1>
     <form id="messageForm">
@@ -92,27 +100,71 @@
       <button type="submit" id="submitMessage">Kirim Ucapan</button>
     </form>
     <ul id="messageList"></ul>
+    <div class="pagination">
+      <button id="prevPage" class="disabled">Sebelumnya</button>
+      <button id="nextPage">Selanjutnya</button>
+    </div>
 
     <script>
-      async function fetchMessages() {
+      let currentPage = 1;
+      const limit = 2;
+      let totalMessages = 0;
+      const totalPages = Math.ceil(totalMessages / limit);
+
+      async function fetchMessages(page = 1) {
         try {
           const response = await fetch(
-            "http://localhost/eksperimen/server.php"
+            `http://localhost/eksperimen/server.php?page=${page}&limit=${limit}`
           );
-          const messages = await response.json();
+          const data = await response.json();
 
           const messageListElement = document.getElementById("messageList");
           messageListElement.innerHTML = "";
-          messages.forEach((message) => {
+          data.messages.forEach((message) => {
             const listItem = document.createElement("li");
-            listItem.innerHTML = `<span class="guest-name">${message.name}:</span> ${message.message}`;
+            listItem.innerHTML = `<span class="guest-name">${
+              message.name
+            }:</span> ${message.message} <small>${new Date(
+              message.created_at
+            ).toLocaleString()}</small>`;
             messageListElement.appendChild(listItem);
           });
+
+          totalMessages = data.total;
+          updatePagination(page);
         } catch (error) {
           console.error("Kesalahan saat mengambil data:", error);
           alert("Gagal mengambil data ucapan.");
         }
       }
+
+      function updatePagination(page) {
+        const prevPageButton = document.getElementById("prevPage");
+        const nextPageButton = document.getElementById("nextPage");
+
+        prevPageButton.classList.toggle("disabled", page <= 1);
+        nextPageButton.classList.toggle(
+          "disabled",
+          page >= Math.ceil(totalMessages / limit)
+        );
+
+        prevPageButton.disabled = page <= 1;
+        nextPageButton.disabled = page >= Math.ceil(totalMessages / limit);
+      }
+
+      document.getElementById("prevPage").addEventListener("click", () => {
+        if (currentPage > 1) {
+          currentPage--;
+          fetchMessages(currentPage);
+        }
+      });
+
+      document.getElementById("nextPage").addEventListener("click", () => {
+        if (currentPage < Math.ceil(totalMessages / limit)) {
+          currentPage++;
+          fetchMessages(currentPage);
+        }
+      });
 
       document
         .getElementById("messageForm")
@@ -143,7 +195,7 @@
               console.log("Server Response:", result);
 
               if (response.ok) {
-                fetchMessages();
+                fetchMessages(currentPage);
                 document.getElementById("guestName").value = "";
                 document.getElementById("userMessage").value = "";
               } else {
@@ -159,6 +211,9 @@
             alert("Silakan isi nama dan ucapan Anda terlebih dahulu.");
           }
         });
+
+      // Memanggil fetchMessages() saat halaman dimuat
+      fetchMessages(currentPage);
     </script>
   </body>
 </html>
